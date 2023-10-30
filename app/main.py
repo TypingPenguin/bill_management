@@ -24,6 +24,11 @@ origins = [
     "http://localhost:3000",  # Example: Allow requests from a React app running locally
     "http://192.168.1.68",
     "http://192.168.1.68:9000",
+    "http://192.168.1.22",
+    "http://192.168.1.22:9000",
+    "http://bill_website.typingpenguin.com",
+    "http://bill_website.typingpenguin.com:30021"
+
 ]
 
 app.add_middleware(
@@ -46,7 +51,7 @@ async def ping():
 
 @app.get("/version")
 async def ping():
-    return "v0.1"
+    return "v0.11"
 
 @app.post("/post/splitwise/multiplier")
 async def post_splitwise_multiplier(items : List[jumbo_kassabon.Item_multiplier]):
