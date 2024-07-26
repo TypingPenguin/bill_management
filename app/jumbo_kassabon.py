@@ -9,6 +9,13 @@ from selenium.webdriver.support.wait import WebDriverWait
 import re
 from pydantic import BaseModel
 import datetime
+from loguru import logger
+import time
+
+import dotenv
+
+dotenv_file = dotenv.find_dotenv()
+dotenv.load_dotenv(dotenv_file)
 
 class Item_multiplier(BaseModel):
     name: str | None = None
@@ -23,10 +30,17 @@ class Item:
     def __str__(self):
         return f"{self.name}({self.price})"
 
+
+
 def get_bill_items():
 
     print("-------------Setting up driver-------------")
     driver = __set_up_driver()
+    logger.remove()
+    # time.sleep(5)
+    print("Source page:")
+    print(driver.page_source)
+    print("End of source page")
 
     try:
         print("-------------Setting up table_text-------------")
@@ -48,17 +62,21 @@ def get_bill_items():
     return item_list
 
 def __set_up_driver():
-    user_agent = "Chrome/58.0.3029.110"
+    # user_agent = "Chrome/58.0.3029.110"
+    user_agent = "Chrome/91.0.4472.124"
     # chrome_driver_path = os.environ['CHROMEDRIVER_PATH']
     # print(chrome_driver_path)
-    # os.environ['webdriver.chrome.driver'] = chrome_driver_path
+    # os.environ['webdriver.chrome.driver'] = "C:\\Users\\Admin\\PycharmProjects\\bill_management\\chrome-win64\\chromedriver.exe"
     # Specify Chrome options
     chrome_options = webdriver.ChromeOptions()
-    chrome_options.add_argument('--headless')  # Optional: Run Chrome in headless mode
+    # chrome_options.add_argument('--headless')  # Optional: Run Chrome in headless mode
     # chrome_options.add_argument('--disable-gpu')  # Optional: Disable GPU acceleration
     chrome_options.add_argument(f'user-agent={user_agent}')
     chrome_options.add_argument("--no-sandbox")  # Disable sandbox
     chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+    chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    chrome_options.add_experimental_option("useAutomationExtension", False)
     chrome_prefs = {}
     chrome_options.experimental_options["prefs"] = chrome_prefs
     chrome_prefs["profile.default_content_settings"] = {"images": 2}
@@ -74,22 +92,32 @@ def __goto_bill(driver):
     username = os.environ['MY_USER']
     password = os.environ['MY_PASS']
 
+
     # ---Press on first login button
     print("-------------first login button-------------")
-    login_button = driver.find_element(By.XPATH, '//button[@data-testid="login-link"]')
+    logger.info("-------------first login button-------------")
+    time.sleep(4)
+    # WebDriverWait(driver, 70).until(EC.element_to_be_clickable((By.XPATH, '/html/body/div/div/div/div/div/main/div/div/div/div[2]/button[2]')))
+    login_button = driver.find_element(By.XPATH, '//*[@id="__nuxt"]/div/div/div[1]/main/div/div[1]/div/div[2]/button')
     login_button.click()
     WebDriverWait(driver, 10).until(
         EC.element_to_be_clickable((By.XPATH, '/html/body/main/section/div/div/div/form/div[3]/button')))
     # ---Login with account
     print("-------------login with account-------------")
+    time.sleep(5)
+
+    logger.info("trying to login")
     username_field = driver.find_element(By.XPATH, '//*[@id="username"]')
     password_field = driver.find_element(By.XPATH, '//*[@id="password"]')
     username_field.send_keys(username)
     password_field.send_keys(password)
-    login_button = driver.find_element(By.XPATH, '/html/body/main/section/div/div/div/form/div[3]/button')
+    time.sleep(5)
+    login_button = driver.find_element(By.XPATH, '/html/body/main/section/div/div/div/form/div[2]/button')
     login_button.click()
     WebDriverWait(driver, 10).until(
         EC.element_to_be_clickable((By.XPATH, '/html/body/div[2]/div/div/div[1]/main/div/div[1]/div/div[1]/button')))
+    time.sleep(4)
+    logger.info("Succesfully logged in")
     # ---Press "Meer"
     print("-------------Meer-------------")
     meer_button = driver.find_element(By.XPATH, '/html/body/div[2]/div/div/div[1]/nav/ul/li[5]/a/button')
@@ -98,6 +126,7 @@ def __goto_bill(driver):
         EC.element_to_be_clickable((By.XPATH, '/html/body/div[2]/div/div/div[1]/main/div[2]/ul/li[1]/a')))
     # ---Press "Kassabonnen"
     print("-------------Press 'kassabonnen'-------------")
+    logger.info("trying to reach kassabonnen")
     kassabonen = driver.find_element(By.XPATH, '/html/body/div[2]/div/div/div[1]/main/div[2]/ul/li[1]/a')
     kassabonen.click()
     WebDriverWait(driver, 10).until(EC.visibility_of_element_located(
@@ -192,6 +221,8 @@ async def prepare_data_splitwise(items):
     current_date_normal = datetime.datetime.now().strftime("%Y-%m-%d")
     current_date = datetime.datetime.utcnow().isoformat() + "Z"
     auth_token = os.environ["BEARER_SPLITWISE"]
+    group_id = os.environ["GROUP_ID"]
+    category_id = os.environ["CATEGORY_ID"]
     headers = {'Authorization': f'Bearer {auth_token}'}
 
     data = {
@@ -201,8 +232,8 @@ async def prepare_data_splitwise(items):
         "date": current_date,
         "repeat_interval": "never",
         "currency_code": "EUR",
-        "category_id": 15,
-        "group_id": 54209328,
+        "category_id": category_id,
+        "group_id": group_id,
         "split_equally": True
     }
 

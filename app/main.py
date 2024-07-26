@@ -4,11 +4,14 @@ from typing import List
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app import jumbo_kassabon
+from app import jumbo_kassabon, jumbo_api
 import yaml
 import os
 import requests
 import datetime
+from loguru import logger
+import sys
+
 
 app = FastAPI()
 
@@ -26,9 +29,7 @@ origins = [
     "http://192.168.1.68:9000",
     "http://192.168.1.22",
     "http://192.168.1.22:9000",
-    "http://bill_website.typingpenguin.com",
-    "http://bill_website.typingpenguin.com:30021"
-
+    "https://bill_website.typingpenguin.com",
 ]
 
 app.add_middleware(
@@ -39,19 +40,40 @@ app.add_middleware(
     allow_headers=["*"],  # You can specify allowed headers or use ["*"] to allow all headers
 )
 
+logger.info("Creating jumbo object")
+jumbo = jumbo_api.jumbo()
+
 @app.get("/jumbo/kassabon/latest")
 async def get_jumbo_kassabon():
-    item_list = jumbo_kassabon.get_bill_items()
-    return item_list
+    logger.info("Getting request for latest kassabon")
+    bill_list = jumbo.get_list_bonnen()
+    latest_bill = bill_list[0]
+    latest_bill_id = latest_bill['transactionId']
+    get_bill = jumbo.get_bill(latest_bill_id)
+    return get_bill
 
+@app.get("/jumbo/kassabon/{bill_id}")
+async def get_jumbo_kassabon(bill_id: str):
+    logger.info("Getting request for kassabon with id: " + bill_id)
+    get_bill = jumbo.get_bill(bill_id)
+    return get_bill
+
+@app.get("/jumbo/kassabonnen")
+async def get_jumbo_kassabonnen():
+    logger.info("Getting request for all kassabonnen")
+    bill_list = jumbo.get_list_bonnen()
+    return bill_list
+
+@app.get("/jumbo/kassabon/date/{date}")
 
 @app.get("/ping")
 async def ping():
+    logger.info("Ping request")
     return "ping"
 
 @app.get("/version")
-async def ping():
-    return "v0.11"
+async def version():
+    return "v0.12"
 
 @app.post("/post/splitwise/multiplier")
 async def post_splitwise_multiplier(items : List[jumbo_kassabon.Item_multiplier]):
