@@ -73,7 +73,7 @@ async def ping():
 
 @app.get("/version")
 async def version():
-    return "v0.12"
+    return "v0.22"
 
 @app.post("/post/splitwise/multiplier")
 async def post_splitwise_multiplier(items : List[jumbo_kassabon.Item_multiplier]):

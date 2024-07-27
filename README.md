@@ -3,6 +3,7 @@
 `MY_USER` is jumbo username
 `MY_PASS` is jumbo password
 `BEARER_SPLITWISE` splitwise bearer token
+More .env variables can be found in the .env-example that need to be filled in
 
 # Run project
 

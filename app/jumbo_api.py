@@ -114,7 +114,15 @@ class jumbo():
             tokens = response.json()
             new_access_token = tokens['access_token']
             new_refresh_token = tokens.get('refresh_token', self.refresh_token)  # Update refresh token if provided
-            dotenv.set_key(dotenv_file, 'REFRESH_TOKEN', new_refresh_token)
+            try:
+                dotenv.set_key(dotenv_file, 'REFRESH_TOKEN', new_refresh_token)
+            except:
+                logger.error("Failed to update refresh token in .env file")
+
+            try:
+                os.environ['REFRESH_TOKEN'] = new_refresh_token
+            except:
+                logger.error("Failed to update refresh token in environment variables")
             return new_access_token, new_refresh_token
         else:
             return None, None
